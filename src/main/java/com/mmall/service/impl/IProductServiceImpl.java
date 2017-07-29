@@ -15,7 +15,6 @@ import com.mmall.util.PropertiesUtil;
 import com.mmall.vo.ProductDetailVo;
 import com.mmall.vo.ProductListVo;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.format.DateTimeFormatter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -109,7 +108,7 @@ public class IProductServiceImpl implements IProductService {
         return productDetailVo;
     }
 
-    public ServerResponse getProductList(int pageNum, int pageSize) {
+    public ServerResponse<PageInfo> getProductList(int pageNum, int pageSize) {
         //startPage--start
         //填充自己的sql查询逻辑
         //pageHelper-收尾
@@ -136,5 +135,21 @@ public class IProductServiceImpl implements IProductService {
         productListVo.setSubtitle(product.getSubtitle());
         productListVo.setStatus(product.getStatus());
         return productListVo;
+    }
+
+    public ServerResponse<PageInfo> searchProduct(String productName, Integer productId,int pageNum, int pageSize){
+        PageHelper.startPage(pageNum, pageSize);
+        if (StringUtils.isNotBlank(productName)){
+            productName = new StringBuilder().append("%").append(productName).append("%").toString();
+        }
+        List<Product> productList = productMapper.selectByNameAndProductId(productName,productId);
+        List<ProductListVo> productListVoList = Lists.newArrayList();
+        for (Product productItem : productList){
+            ProductListVo productListVo = assembleProductListVo(productItem);
+            productListVoList.add(productListVo);
+        }
+        PageInfo pageResult = new PageInfo(productList);
+        pageResult.setList(productListVoList);
+        return ServerResponse.createBySuccess(pageResult);
     }
 }
